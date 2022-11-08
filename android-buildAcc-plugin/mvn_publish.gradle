@@ -6,8 +6,13 @@ def getPropertyFromLocalProperties(key, Object defaultValue) {
         Properties properties = new Properties()
         properties.load(file.newDataInputStream())
         return properties.getOrDefault(key, defaultValue)
+    } else {
+        return defaultValue
     }
 }
+
+def REPO_URL = new File(project.parent.projectDir, 'gradle_plugins').absolutePath
+println("REPO_URL: " + REPO_URL)
 
 publishing {
     println "publish ===================================="
@@ -21,7 +26,7 @@ publishing {
     }
     repositories {
         maven {
-            url = getPropertyFromLocalProperties("REPO_URL", "")
+            url = getPropertyFromLocalProperties("REPO_URL", REPO_URL)
         }
     }
 }
