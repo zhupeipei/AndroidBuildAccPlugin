@@ -10,13 +10,15 @@ import com.android.buildAcc.model.BuildAccExtension
 import com.android.buildAcc.util.BuildListenerWrapper
 import com.android.buildAcc.util.ProjectEvaluationListenerWrapper
 import com.android.buildAcc.util.isAppPlugin
+import com.android.buildAcc.util.log
+import com.android.buildAcc.util.pathEquals
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.ProjectState
 import org.gradle.api.internal.artifacts.repositories.DefaultMavenArtifactRepository
 import org.gradle.api.invocation.Gradle
 import org.gradle.invocation.DefaultGradle
-import org.jetbrains.kotlin.konan.file.File
+import java.io.File
 
 /**
  * @author ZhuPeipei
@@ -45,12 +47,15 @@ class BuildAccPlugin : Plugin<Project> {
             }
             val url = mBuildAccExtension?.mavenUrl
             MAVEN_REPO_DEFAULT_URL = if (url?.isNotEmpty() == true) {
-                if (url.startsWith("./"))
-                    "${project.rootProject.projectDir}${File.separator}${url.substring(2)}"
-                else url
+                if (url.startsWith("/")) {
+                    url
+                } else {
+                    File(project.rootProject.projectDir, url).absolutePath
+                }
             } else {
-                "${project.rootProject.projectDir}${File.separator}gradle_plugins"
+                "${project.rootProject.projectDir}${File.separator}gradle_plugins/"
             }
+            log("MAVEN_REPO_DEFAULT_URL=${MAVEN_REPO_DEFAULT_URL}")
 
             val version =
                 runCatching { project.gradle.gradleVersion.split(".")[0].toInt() }.getOrNull() ?: 0
@@ -60,7 +65,7 @@ class BuildAccPlugin : Plugin<Project> {
                 val repos = gradle.settings.dependencyResolutionManagement.repositories
                 repos.find {
                     val uri = (it as? DefaultMavenArtifactRepository)?.url
-                    uri?.scheme == "file" && uri.path == MAVEN_REPO_DEFAULT_URL
+                    uri?.scheme == "file" && pathEquals(uri.path, MAVEN_REPO_DEFAULT_URL)
                 } ?: throw RuntimeException(
                     "gradle 7.0以上版本需要在setting.gradle中添加aar依赖路径，" +
                             "或者手动在setting.gradle中应用BuildAccRepoApplyPlugin插件"

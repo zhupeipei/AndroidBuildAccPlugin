@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskProvider
+import java.io.File
 
 /**
  * @author ZhuPeipei
@@ -87,6 +88,5 @@ fun configurationList(project: Project, appExtension: AppExtension) =
         values
     }
 
-private fun createConfiguration() {
-
-}
+fun pathEquals(path: String, comparePath: String) =
+    File(path).canonicalPath == File(comparePath).canonicalPath
