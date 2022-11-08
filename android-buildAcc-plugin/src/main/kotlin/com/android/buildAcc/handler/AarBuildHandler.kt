@@ -1,0 +1,62 @@
+package com.android.buildAcc.handler
+
+import com.android.buildAcc.util.ASSEMBLE
+import com.android.buildAcc.util.MAVEN_TASK_PREFIX
+import com.android.buildAcc.util.getAppAssembleTask
+import com.android.buildAcc.util.getAppProject
+import com.android.buildAcc.util.getBundleAarTask
+import com.android.buildAcc.util.log
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
+
+/**
+ * @author ZhuPeipei
+ * @date 2022/11/3 20:41
+ * 将子模块打包为aar
+ */
+class AarBuildHandler {
+    fun handleAssembleTask(project: Project) {
+        val (appExtension, appProject) = getAppProject(project) ?: return
+
+        appExtension.applicationVariants.forEach { applicationVariant ->
+            val assembleTaskProvider = getAppAssembleTask(
+                appProject,
+                ASSEMBLE + applicationVariant.flavorName.capitalize() + applicationVariant.buildType.name.capitalize()
+            )
+            assembleTaskProvider?.configure { assembleTask ->
+                project.rootProject.allprojects.forEach { project ->
+                    val buildTypeName = applicationVariant.buildType.name
+                    getBundleAarTask(project, buildTypeName)?.let { bundleAarTask ->
+                        assembleTask.finalizedBy(bundleAarTask)
+                        hookPublishToMavenTask(bundleAarTask, buildTypeName, project)
+                    }
+                }
+            }
+        }
+    }
+
+    private val publishTaskSet = mutableSetOf<String>()
+
+    private fun hookPublishToMavenTask(
+        bundleAarTaskProvider: TaskProvider<Task>,
+        buildTypeName: String,
+        project: Project
+    ) {
+        val key = "${project.path}-${buildTypeName}"
+        if (publishTaskSet.contains(key)) {
+            return
+        }
+        publishTaskSet.add(key)
+        val publicationName = "$MAVEN_TASK_PREFIX${buildTypeName.capitalize()}"
+
+        val publishTask =
+            runCatching { project.tasks.named("publish${publicationName.capitalize()}PublicationToMavenRepository") }.getOrNull()
+                ?: return
+        // PublicationToMavenRepository 暂未实现，PublicationToMavenLocal
+        log("${publishTask.name} set executed after ${bundleAarTaskProvider.name} for project (${project.name})")
+        bundleAarTaskProvider.configure { bundleAarTask ->
+            bundleAarTask.finalizedBy(publishTask)
+        }
+    }
+}

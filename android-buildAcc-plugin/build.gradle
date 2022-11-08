@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'kotlin'
+}
+
+dependencies {
+    implementation localGroovy()
+    implementation gradleApi()
+    implementation "com.android.tools.build:gradle:7.2.1"
+    implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.10"
+}
+
+apply from: './mvn_publish.gradle'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
