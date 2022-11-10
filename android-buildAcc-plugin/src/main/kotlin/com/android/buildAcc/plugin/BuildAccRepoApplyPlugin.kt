@@ -1,6 +1,6 @@
 package com.android.buildAcc.plugin
 
-import com.android.buildAcc.constants.MAVEN_REPO_DEFAULT_URL
+import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
 import com.android.buildAcc.model.BuildAccRepoExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -23,7 +23,7 @@ private class BuildAccRepoApplyPlugin : Plugin<Project> {
             throw RuntimeException("BuildAccRepoExtension 未配置，请检查")
         }
 
-        MAVEN_REPO_DEFAULT_URL = if (buildAccRepoExtension.repo.startsWith("./")) {
+        MAVEN_REPO_LOCAL_URL = if (buildAccRepoExtension.repo.startsWith("./")) {
             "${project.rootProject.projectDir}${File.separator}${
                 buildAccRepoExtension.repo.substring(2)
             }"

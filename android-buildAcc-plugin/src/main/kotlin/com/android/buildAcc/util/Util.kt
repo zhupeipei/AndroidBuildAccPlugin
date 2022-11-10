@@ -6,7 +6,10 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskProvider
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * @author ZhuPeipei
@@ -62,6 +65,17 @@ fun Project.getDefaultMavenVersion(buildTypeName: String): String {
     return "1.0.0-$buildTypeName"
 }
 
+private val mDateFormat = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault())
+
+fun Project.getRemoteMavenVersion(commitId: String, buildTypeName: String): String {
+//    return "${mDateFormat.format(Calendar.getInstance())}-$buildTypeName-$commitId"
+    return "$buildTypeName-$commitId"
+}
+
+fun Project.getLocalMavenVersion(buildTypeName: String, lastModifiedTime: Long): String {
+    return "1.0.0-$buildTypeName-$lastModifiedTime"
+}
+
 fun configurationList(project: Project, appExtension: AppExtension) =
     with(hashMapOf<String, Configuration>()) {
         CONFIGURATIONS.forEach { configuration ->
@@ -90,3 +104,56 @@ fun configurationList(project: Project, appExtension: AppExtension) =
 
 fun pathEquals(path: String, comparePath: String) =
     File(path).canonicalPath == File(comparePath).canonicalPath
+
+fun Project.execCmd(cmd: String): String {
+    val stdOut = ByteArrayOutputStream()
+    project.exec {
+        it.executable = "sh"
+        it.args = listOf("-c", cmd)
+        it.standardOutput = stdOut
+    }
+    val result = stdOut.toString()
+    log(
+        "cmd = $cmd, result = ${
+            if (result.length > 100) result.substring(
+                0,
+                100
+            ) + "..." else result
+        }"
+    )
+    return result
+}
+
+fun String?.isNullOrEmpty() = this == null || this.isEmpty()
+
+fun getCommitId(project: Project): String? {
+    val projectDir = project.projectDir.absolutePath
+    val commitRes = project.execCmd("cd $projectDir && git log | head -n 1")
+    if (commitRes.startsWith("commit ")) {
+        return commitRes.substring(7).replace("\n", "")
+    }
+    return null
+}
+
+fun Project.getLastModifiedTimeStamp(): Long {
+    val path = this.projectDir.absolutePath
+    return queryFolderLastModifiedTimeStamp(File(path))
+}
+
+private fun queryFolderLastModifiedTimeStamp(file: File): Long {
+    if (file.isDirectory) {
+        if (file.name.contains("build") || file.startsWith(".")) {
+            return 0
+        }
+        var lastModifiedTime = 0L
+        file.listFiles().forEach {
+            val tmp = queryFolderLastModifiedTimeStamp(it)
+            if (tmp > lastModifiedTime) {
+                lastModifiedTime = tmp
+            }
+        }
+        return lastModifiedTime
+    } else {
+        return file.lastModified()
+    }
+}
