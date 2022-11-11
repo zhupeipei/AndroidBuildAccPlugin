@@ -30,16 +30,18 @@ class ChangedModulesHandler {
     // 这里先处理下配置的参数
     fun initProject(project: Project, buildAccExtension: BuildAccExtension?) {
         val includeProjects =
-            buildAccExtension?.includeBundles?.map { it.lowercase(Locale.getDefault()) }
+            buildAccExtension?.includeBundles?.map { it.toLowerCase(Locale.getDefault()) }
         val excludeProjects =
-            buildAccExtension?.excludeBundles?.map { it.lowercase(Locale.getDefault()) }
+            buildAccExtension?.excludeBundles?.map { it.toLowerCase(Locale.getDefault()) }
         project.rootProject.allprojects.forEach {
-            if (excludeProjects == null || !excludeProjects.contains(it.name.lowercase(Locale.getDefault()))) {
-                if (includeProjects == null) {
-                    mNeedResolvedProjectMap[it.name] = BundleInfo(it)
-                } else {
-                    if (includeProjects.contains(it.name.lowercase(Locale.getDefault()))) {
+            if (it != project.rootProject) {
+                if (excludeProjects == null || !excludeProjects.contains(it.name.toLowerCase(Locale.getDefault()))) {
+                    if (includeProjects == null) {
                         mNeedResolvedProjectMap[it.name] = BundleInfo(it)
+                    } else {
+                        if (includeProjects.contains(it.name.toLowerCase(Locale.getDefault()))) {
+                            mNeedResolvedProjectMap[it.name] = BundleInfo(it)
+                        }
                     }
                 }
             }
@@ -99,5 +101,13 @@ class ChangedModulesHandler {
         removedProjectNameList?.forEach {
             removeProjectForDependency(it)
         }
+    }
+
+    fun printLog() {
+        log("================================================== 参与加速编译的模块如下：")
+        mNeedResolvedProjectMap.forEach { (t, u) ->
+            log("project $t")
+        }
+        log("================================================== 参与加速编译的模块如 end")
     }
 }

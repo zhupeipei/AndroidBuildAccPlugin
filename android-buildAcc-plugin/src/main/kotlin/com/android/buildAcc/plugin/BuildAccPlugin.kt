@@ -56,7 +56,7 @@ class BuildAccPlugin : Plugin<Project> {
                 if (localUrl.startsWith("/")) {
                     localUrl
                 } else {
-                    File(project.rootProject.projectDir, localUrl).absolutePath
+                    File(project.rootProject.projectDir, localUrl).canonicalPath
                 }
             } else {
                 "${project.rootProject.projectDir}${File.separator}gradle_plugins/"
@@ -123,6 +123,8 @@ class BuildAccPlugin : Plugin<Project> {
                 if (mAppProject == null || appExtension == null) {
                     throw RuntimeException("未找到com.android.application模块")
                 }
+
+                mChangedModulesHandler.printLog()
 
                 val handler = AarBuildHandler()
                 // 在assembleTask后，将子模块打包为aar并上传
