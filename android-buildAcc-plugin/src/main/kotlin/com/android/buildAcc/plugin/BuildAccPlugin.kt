@@ -15,11 +15,14 @@ import com.android.buildAcc.util.BuildListenerWrapper
 import com.android.buildAcc.util.ProjectEvaluationListenerWrapper
 import com.android.buildAcc.util.isAppPlugin
 import com.android.buildAcc.util.log
+import com.android.buildAcc.util.pathEquals
 import org.gradle.BuildResult
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.ProjectState
+import org.gradle.api.internal.artifacts.repositories.DefaultMavenArtifactRepository
 import org.gradle.api.invocation.Gradle
+import org.gradle.invocation.DefaultGradle
 import java.io.File
 
 /**
