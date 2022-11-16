@@ -1,16 +1,18 @@
 package com.android.buildAcc.handler
 
-import com.android.build.api.dsl.Bundle
 import com.android.buildAcc.constants.PROJECT_MAVEN_MAP
 import com.android.buildAcc.model.BuildAccExtension
 import com.android.buildAcc.model.BundleInfo
+import com.android.buildAcc.model.LocalDependencyModel
 import com.android.buildAcc.util.isAndroidPlugin
 import com.android.buildAcc.util.log
 import org.gradle.api.Project
+import org.gradle.api.internal.artifacts.dependencies.DefaultDependencyArtifact
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
+import org.jetbrains.kotlin.konan.file.File
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 
 /**
  * @author ZhuPeipei
@@ -20,6 +22,9 @@ class ChangedModulesHandler {
     // 这里存储了需要参与加速编译的Bundle
     private val mNeedResolvedProjectMap = hashMapOf<String, BundleInfo>()
     private val mDependencyMap = hashMapOf<String, HashSet<String>>()
+
+    // 存储下本地依赖的aar和jar包，这里默认都会成功，失败的逻辑后续再处理
+    val mLocalDependencyMap = hashMapOf<String, ArrayList<LocalDependencyModel>>()
 
     fun needAccBuildBundle(project: Project) = mNeedResolvedProjectMap.containsKey(project.name)
 
@@ -79,6 +84,40 @@ class ChangedModulesHandler {
                         // 如果remove掉当前项目，那么依赖当前项目的其他项目也需要remove掉
                         removeProjectForDependency(projectName)
                     }
+                } else if (dependency is DefaultExternalModuleDependency && dependency.artifacts.isNotEmpty()) {
+                    // 这里判断有点简单了，还没有想到比较好的方式处理
+                    if (dependency.group == null && dependency.version == null) {
+                        dependency.artifacts.forEach {
+                            if (it is DefaultDependencyArtifact && ("aar" == it.type || "jar" == it.type)) {
+                                // 这里拿到了api(name: 'HiPushSdk-v6.0.3.103-release', ext: 'aar')这种类型的依赖
+                                // 这种类型的依赖在gradle-7上已经不再被支持了
+                                val path =
+                                    "${project.projectDir}${File.separator}libs${File.separator}${it.name}.${it.type}"
+                                if (File(path).exists) {
+                                    // 这里将会开始操作
+                                    var list = mLocalDependencyMap[projectName]
+                                    if (list == null) {
+                                        list = arrayListOf()
+                                        mLocalDependencyMap[projectName] = list
+                                    }
+                                    list.add(LocalDependencyModel(path, it.name, it.type))
+                                }
+                            }
+                        }
+                    }
+                } else if (dependency is DefaultSelfResolvingDependency) {
+                    // 这里需要考虑如下的依赖，暂时先不做处理（需要考虑过滤依赖系统的jar）
+                    // api fileTree (include: '*.jar', dir: 'libs')
+                    // api fileTree (dir: 'libs', excludes: ['*.jar'])
+                    // api fileTree (dir: 'libs', include: ['*.jar'])
+                    // api files("libs/HiPushSdk-v6.0.3.103-release.aar")
+
+                    // Dependencies of file collection===unspecified===null===null===
+                    // class org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency_Decorated===
+                    // [XXX/Library/Android/sdk/platforms/android-32/core-for-system-modules.jar]
+                    // log("222 dependency: ${dependency.buildDependencies}===${dependency.name}===
+                    // ${dependency.group}===${dependency.version}===${dependency.javaClass}===
+                    // ${dependency.files.files}")
                 }
             }
         }

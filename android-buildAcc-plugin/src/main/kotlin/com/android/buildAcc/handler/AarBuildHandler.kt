@@ -24,7 +24,9 @@ class AarBuildHandler {
                 appProject,
                 ASSEMBLE + applicationVariant.flavorName.capitalize() + applicationVariant.buildType.name.capitalize()
             )
+            val buildAccAfterAssembleTask = createAfterAssembleTask(project)
             assembleTaskProvider?.configure { assembleTask ->
+                assembleTask.finalizedBy(buildAccAfterAssembleTask)
                 project.rootProject.allprojects.forEach { project ->
                     val buildTypeName = applicationVariant.buildType.name
                     getBundleAarTask(project, buildTypeName)?.let { bundleAarTask ->
@@ -34,6 +36,18 @@ class AarBuildHandler {
                 }
             }
         }
+    }
+
+    private fun createAfterAssembleTask(project: Project): Task {
+        val buildAccAfterAssembleTask = project.task("buildAccAfterAssembleTask")
+        buildAccAfterAssembleTask.doLast {
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+            log("=============================================buildAccAfterAssembleTask===========================================================")
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+        }
+        return buildAccAfterAssembleTask
     }
 
     private val publishTaskSet = mutableSetOf<String>()
@@ -55,8 +69,22 @@ class AarBuildHandler {
                 ?: return
         // PublicationToMavenRepository 暂未实现，PublicationToMavenLocal
         log("${publishTask.name} set executed after ${bundleAarTaskProvider.name} for project (${project.name})")
+        val buildAccAfterBundleAarTask = createAfterBundleAarTask(project)
         bundleAarTaskProvider.configure { bundleAarTask ->
+            bundleAarTask.finalizedBy(buildAccAfterBundleAarTask)
             bundleAarTask.finalizedBy(publishTask)
         }
+    }
+
+    private fun createAfterBundleAarTask(project: Project): Task {
+        val buildAccAfterBundleAarTask = project.task("buildAccAfterBundleAarTask")
+        buildAccAfterBundleAarTask.doLast {
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+            log("============================================buildAccAfterBundleAarTask===========================================================")
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+        }
+        return buildAccAfterBundleAarTask
     }
 }

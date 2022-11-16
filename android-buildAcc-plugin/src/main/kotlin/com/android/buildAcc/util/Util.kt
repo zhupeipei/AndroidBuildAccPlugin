@@ -19,6 +19,7 @@ const val ASSEMBLE = "assemble"
 const val BUNDLE = "bundle"
 const val AAR = "Aar"
 const val MAVEN_TASK_PREFIX = "mavenBuildAccFor"
+const val MAVEN_TASK_PREFIX_FOR_LOCAL_DEPENDENCY = "mavenBuildAccInLocalDependency"
 
 fun getAppProject(project: Project): Pair<AppExtension, Project>? {
     project.rootProject.allprojects.forEach {
@@ -106,22 +107,27 @@ fun pathEquals(path: String, comparePath: String) =
     File(path).canonicalPath == File(comparePath).canonicalPath
 
 fun Project.execCmd(cmd: String): String {
-    val stdOut = ByteArrayOutputStream()
-    project.exec {
-        it.executable = "sh"
-        it.args = listOf("-c", cmd)
-        it.standardOutput = stdOut
+    try {
+        val stdOut = ByteArrayOutputStream()
+        project.exec {
+            it.executable = "sh"
+            it.args = listOf("-c", cmd)
+            it.standardOutput = stdOut
+            it.errorOutput = stdOut
+        }
+        val result = stdOut.toString()
+        log(
+            "cmd = $cmd, result = ${
+                if (result.length > 100) result.substring(
+                    0,
+                    100
+                ) + "..." else result
+            }"
+        )
+        return result
+    } catch (e: Exception) {
+        return ""
     }
-    val result = stdOut.toString()
-    log(
-        "cmd = $cmd, result = ${
-            if (result.length > 100) result.substring(
-                0,
-                100
-            ) + "..." else result
-        }"
-    )
-    return result
 }
 
 fun String?.isNullOrEmpty() = this == null || this.isEmpty()

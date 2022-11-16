@@ -7,6 +7,7 @@ import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
 import com.android.buildAcc.handler.AarBuildHandler
 import com.android.buildAcc.handler.BuildTimeCostHandler
 import com.android.buildAcc.handler.ChangedModulesHandler
+import com.android.buildAcc.handler.LocalDependencyUploadHandler
 import com.android.buildAcc.handler.MavenPublishHandler
 import com.android.buildAcc.handler.ReplaceDependencyHandler
 import com.android.buildAcc.model.BuildAccExtension
@@ -14,14 +15,11 @@ import com.android.buildAcc.util.BuildListenerWrapper
 import com.android.buildAcc.util.ProjectEvaluationListenerWrapper
 import com.android.buildAcc.util.isAppPlugin
 import com.android.buildAcc.util.log
-import com.android.buildAcc.util.pathEquals
 import org.gradle.BuildResult
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.ProjectState
-import org.gradle.api.internal.artifacts.repositories.DefaultMavenArtifactRepository
 import org.gradle.api.invocation.Gradle
-import org.gradle.invocation.DefaultGradle
 import java.io.File
 
 /**
@@ -36,6 +34,7 @@ class BuildAccPlugin : Plugin<Project> {
     private val mBuildTimeCostHandler = BuildTimeCostHandler()
     private val mChangedModulesHandler = ChangedModulesHandler()
     private val mavenPublish = MavenPublishHandler(mChangedModulesHandler)
+    private val mLocalDependencyUploadHandler = LocalDependencyUploadHandler()
 
     override fun apply(project: Project) {
         if (project.rootProject != project) {
@@ -108,6 +107,11 @@ class BuildAccPlugin : Plugin<Project> {
                     mavenPublish.applyMavenPublishPlugin(subProject)
                     // 配置maven上传的一些参数
                     mavenPublish.configSubProjectMavenPublishPlugin(subProject)
+                    // 添加上传本地依赖的一些文件
+                    mLocalDependencyUploadHandler.configLocalDependencyMavenPublishPlugin(
+                        subProject,
+                        mChangedModulesHandler.mLocalDependencyMap
+                    )
                 }
             }
         })
@@ -132,6 +136,12 @@ class BuildAccPlugin : Plugin<Project> {
 
                 val replaceDependencyHandler = ReplaceDependencyHandler()
                 replaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
+
+                mLocalDependencyUploadHandler.resolveDependency(
+                    project.rootProject,
+                    appExtension,
+                    mChangedModulesHandler.mLocalDependencyMap
+                )
             }
 
             override fun buildFinished(buildResult: BuildResult) {
