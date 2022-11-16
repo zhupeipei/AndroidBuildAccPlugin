@@ -39,7 +39,12 @@ class AarBuildHandler {
     }
 
     private fun createAfterAssembleTask(project: Project): Task {
-        val buildAccAfterAssembleTask = project.task("buildAccAfterAssembleTask")
+        val taskName = "buildAccAfterAssembleTask"
+        val task = project.rootProject.tasks.findByName(taskName)
+        if (task != null) {
+            return task
+        }
+        val buildAccAfterAssembleTask = project.rootProject.task(taskName)
         buildAccAfterAssembleTask.doLast {
             log("=================================================================================================================================")
             log("=================================================================================================================================")
@@ -77,7 +82,12 @@ class AarBuildHandler {
     }
 
     private fun createAfterBundleAarTask(project: Project): Task {
-        val buildAccAfterBundleAarTask = project.task("buildAccAfterBundleAarTask")
+        val taskName = "buildAccAfterBundleAarTask"
+        val task = project.rootProject.tasks.findByName(taskName)
+        if (task != null) {
+            return task
+        }
+        val buildAccAfterBundleAarTask = project.rootProject.task(taskName)
         buildAccAfterBundleAarTask.doLast {
             log("=================================================================================================================================")
             log("=================================================================================================================================")

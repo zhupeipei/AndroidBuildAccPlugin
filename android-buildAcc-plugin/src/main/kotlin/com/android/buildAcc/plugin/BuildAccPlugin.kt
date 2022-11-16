@@ -4,6 +4,7 @@ import com.android.build.gradle.AppExtension
 import com.android.buildAcc.constants.BUILD_TYPES
 import com.android.buildAcc.constants.MAVEN_REPO_HTTP_URL
 import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
+import com.android.buildAcc.constants.PROJECT_MAVEN_MAP
 import com.android.buildAcc.handler.AarBuildHandler
 import com.android.buildAcc.handler.BuildTimeCostHandler
 import com.android.buildAcc.handler.ChangedModulesHandler
@@ -37,6 +38,7 @@ class BuildAccPlugin : Plugin<Project> {
     private val mBuildTimeCostHandler = BuildTimeCostHandler()
     private val mChangedModulesHandler = ChangedModulesHandler()
     private val mavenPublish = MavenPublishHandler(mChangedModulesHandler)
+    private val mReplaceDependencyHandler = ReplaceDependencyHandler(mChangedModulesHandler)
     private val mLocalDependencyUploadHandler = LocalDependencyUploadHandler()
 
     override fun apply(project: Project) {
@@ -44,6 +46,8 @@ class BuildAccPlugin : Plugin<Project> {
             throw RuntimeException("当前plugin只能在root module中使用")
         }
         mRootProject = project
+
+        PROJECT_MAVEN_MAP.clear()
 
         mBuildAccExtension =
             project.extensions.create("BuildAccExtension", BuildAccExtension::class.java)
@@ -131,14 +135,11 @@ class BuildAccPlugin : Plugin<Project> {
                     throw RuntimeException("未找到com.android.application模块")
                 }
 
-                mChangedModulesHandler.printLog()
-
                 val handler = AarBuildHandler()
                 // 在assembleTask后，将子模块打包为aar并上传
                 handler.handleAssembleTask(project)
 
-                val replaceDependencyHandler = ReplaceDependencyHandler()
-                replaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
+                mReplaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
 
                 mLocalDependencyUploadHandler.resolveDependency(
                     project.rootProject,

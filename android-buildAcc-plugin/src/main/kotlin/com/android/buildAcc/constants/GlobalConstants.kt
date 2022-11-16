@@ -6,9 +6,6 @@ import com.android.buildAcc.model.BundleInfo
  * @author ZhuPeipei
  * @date 2022/11/4 20:12
  */
-const val MAVEN_REPO_HTTP = 1
-const val MAVEN_REPO_LOCAL = 2
-
 var MAVEN_REPO_LOCAL_URL = ""
 var MAVEN_REPO_HTTP_URL: String? = null
 

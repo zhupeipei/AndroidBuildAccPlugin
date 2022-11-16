@@ -141,19 +141,46 @@ fun getCommitId(project: Project): String? {
     return null
 }
 
+class MyPair(var path: String, var time: Long)
+
 fun Project.getLastModifiedTimeStamp(): Long {
     val path = this.projectDir.absolutePath
-    return queryFolderLastModifiedTimeStamp(File(path))
+    val pair = MyPair("", 0)
+    queryFolderLastModifiedTimeStamp(File(path), pair)
+    log("project $name last update: ${pair.path}, ${pair.time}")
+    return pair.time
 }
 
-private fun queryFolderLastModifiedTimeStamp(file: File): Long {
+private fun queryFolderLastModifiedTimeStamp(file: File, pair: MyPair) {
+    if (file.isDirectory) {
+        if (file.name.contains("build") || file.startsWith(".")) {
+            return
+        }
+        var lastModifiedTime = 0L
+        file.listFiles().forEach {
+            queryFolderLastModifiedTimeStamp(it, pair)
+        }
+    } else {
+        if (pair.time < file.lastModified()) {
+            pair.time = file.lastModified()
+            pair.path = file.absolutePath
+        }
+    }
+}
+
+fun Project.getLastModifiedTimeStampSimple(): Long {
+    val path = this.projectDir.absolutePath
+    return queryFolderLastModifiedTimeStampSimple(File(path))
+}
+
+private fun queryFolderLastModifiedTimeStampSimple(file: File): Long {
     if (file.isDirectory) {
         if (file.name.contains("build") || file.startsWith(".")) {
             return 0
         }
         var lastModifiedTime = 0L
         file.listFiles().forEach {
-            val tmp = queryFolderLastModifiedTimeStamp(it)
+            val tmp = queryFolderLastModifiedTimeStampSimple(it)
             if (tmp > lastModifiedTime) {
                 lastModifiedTime = tmp
             }

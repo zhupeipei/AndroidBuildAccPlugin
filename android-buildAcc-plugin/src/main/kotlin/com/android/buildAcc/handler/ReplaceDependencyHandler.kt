@@ -11,13 +11,19 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
  * @author ZhuPeipei
  * @date 2022/11/5 20:14
  */
-class ReplaceDependencyHandler {
+class ReplaceDependencyHandler(private val mChangedModulesHandler: ChangedModulesHandler) {
     // 策略
     // 1. 找到所有可以被打包的aar模块
     // 2. 检查对应的aar模块是否之前已经生成过
     // 3. 替换依赖
     fun resolveDependency(rootProject: Project, appExtension: AppExtension) {
         // 这里在远程aar依赖的情况下，需要请求网络，最好通过异步的方式来实现
+        // 这里需要注意一点，如果lib对应的jar/aar不存在，此时lib也不能做替换；
+        // 如果lib1依赖lib2，同时别的项目也依赖了lib2，lib2对应的aar存在，lib1对应aar不存在，这时候会导致lib2既有远程依赖又有本地依赖
+        mChangedModulesHandler.checkProjectMavenFileExist()
+
+        mChangedModulesHandler.printLog()
+
         rootProject.allprojects.forEach { subProject ->
             log("subproject ============================== ${subProject.name}")
             val bundleInfo = PROJECT_MAVEN_MAP[subProject.name]
@@ -35,6 +41,9 @@ class ReplaceDependencyHandler {
                         ) {
                             val aarBundle = PROJECT_MAVEN_MAP[dependency.name]
                             val aarMavenInfo = aarBundle?.mavenInfo?.mavenModel
+                            if (aarBundle?.mavenInfo?.modelExist == false) {
+                                throw RuntimeException("${aarMavenInfo}对应的aar或者jar包不存在")
+                            }
                             val mavenAarExist = aarBundle?.mavenInfo?.modelExist ?: false
                             if (aarMavenInfo != null && mavenAarExist) {
                                 // subProject中有项目依赖，并且该项目依赖已经打包为aar，那么就进行替换

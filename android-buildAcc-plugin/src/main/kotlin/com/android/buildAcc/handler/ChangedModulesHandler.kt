@@ -66,6 +66,7 @@ class ChangedModulesHandler {
         }
 
         // 如果mNeedResolvedProjectMap这个模块里有子项目的依赖，而子项目又不在这个map里面，那么该模块也不会被纳入到加速编译中
+        // 如果一个项目依赖的子项目的jar、aar没有生成，这时候不应该进行依赖替换
         // 只需要处理一层，因为所有项目都会调用这个方法
         project.configurations.forEach { configuration ->
             configuration.dependencies.forEach { dependency ->
@@ -73,6 +74,7 @@ class ChangedModulesHandler {
                     var dependencySet = mDependencyMap[projectName]
                     if (dependencySet == null) {
                         dependencySet = hashSetOf()
+                        mDependencyMap[projectName] = dependencySet
                     }
                     dependencySet.add(dependency.name)
 
@@ -80,9 +82,11 @@ class ChangedModulesHandler {
                         // 这里说明子项目没有参与加速编译，那么当前project也不能参与加速编译
                         mNeedResolvedProjectMap.remove(projectName)
                         PROJECT_MAVEN_MAP.remove(projectName) // 这个也需要remove掉
-                        log("$project 项目无法参与加速编译，因为${dependency.name}没有包含到编译加速的模块的中")
+                        log("$project 项目无法参与加速编译，因为${dependency.name}没有包含到加速编译的模块中")
                         // 如果remove掉当前项目，那么依赖当前项目的其他项目也需要remove掉
-                        removeProjectForDependency(projectName)
+                        removeProjectAndParentProjectDependency(projectName) {
+                            log(">>> $it 项目无法参与加速编译，因为${it}依赖的项目---${projectName}没有包含到加速编译的模块中")
+                        }
                     }
                 } else if (dependency is DefaultExternalModuleDependency && dependency.artifacts.isNotEmpty()) {
                     // 这里判断有点简单了，还没有想到比较好的方式处理
@@ -123,12 +127,40 @@ class ChangedModulesHandler {
         }
     }
 
-    private fun removeProjectForDependency(projectName: String) {
+    // 去除加速编译项目中maven没有生成的项目、父项目、子项目
+    // 如果项目不在加速编译的项目中，那么该项目以及父项目都不应该参与加速编译；
+    // 如果加速编译的项目对应的aar文件还没有生成，那么该项目、父项目、子项目都不应该参与编译
+    fun checkProjectMavenFileExist() {
+        val projectNames = mutableListOf<String>()
+        mNeedResolvedProjectMap.forEach { (projectName, bundleInfo) ->
+            if (bundleInfo.mavenInfo?.modelExist == false) {
+                projectNames.add(projectName)
+            }
+        }
+        projectNames.forEach { projectName ->
+            log("$projectName 项目无法参与加速编译，因为当前项目的mavenRepo不存在")
+            mNeedResolvedProjectMap.remove(projectName)
+            PROJECT_MAVEN_MAP.remove(projectName)
+
+            removeProjectAndParentProjectDependency(projectName) {
+                log(">>> $it 项目无法参与加速编译，因为${it}依赖的项目---${projectName}对应的mavenRepo不存在")
+            }
+            removeProjectChildDependency(projectName) {
+                log(">>> $it 项目无法参与加速编译，因为${it}父依赖---${projectName}对应的mavenRepo不存在")
+            }
+        }
+    }
+
+    // 移除依赖projectName的所有父项目
+    private fun removeProjectAndParentProjectDependency(
+        projectName: String,
+        listener: (String) -> Unit
+    ) {
         // 遍历所有的项目，如果有项目依赖projectName，那么需要去除掉
         var removedProjectNameList: ArrayList<String>? = null
         mDependencyMap.forEach { (name, set) ->
             if (set.contains(projectName)) {
-                log(">>> $name 项目无法参与加速编译，因为${projectName}没有包含到编译加速的模块的中")
+                listener(name)
                 mNeedResolvedProjectMap.remove(name)
                 PROJECT_MAVEN_MAP.remove(name)
                 if (removedProjectNameList == null) {
@@ -138,7 +170,21 @@ class ChangedModulesHandler {
             }
         }
         removedProjectNameList?.forEach {
-            removeProjectForDependency(it)
+            removeProjectAndParentProjectDependency(it, listener)
+        }
+    }
+
+    private fun removeProjectChildDependency(projectName: String, listener: (String) -> Unit) {
+        val childProjectSet = mDependencyMap[projectName] ?: return
+        childProjectSet.forEach { childProjectName ->
+            listener(childProjectName)
+            mNeedResolvedProjectMap.remove(childProjectName)
+            PROJECT_MAVEN_MAP.remove(childProjectName)
+        }
+        val list = mutableListOf<String>()
+        list.addAll(childProjectSet)
+        list.forEach {
+            removeProjectChildDependency(it, listener)
         }
     }
 
