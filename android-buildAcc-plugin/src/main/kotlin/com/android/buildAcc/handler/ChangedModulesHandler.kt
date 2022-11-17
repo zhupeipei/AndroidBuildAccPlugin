@@ -188,11 +188,12 @@ class ChangedModulesHandler {
         }
     }
 
-    fun printLog() {
-        log("================================================== 参与加速编译的模块如下：")
-        mNeedResolvedProjectMap.forEach { (t, u) ->
-            log("project $t")
+    fun printLog(rootProject: Project) {
+        log("================================================== 各个模块是否参与编译加速 (参与加速编译的用*标记)")
+        rootProject.allprojects.forEach {
+            val log = if (mNeedResolvedProjectMap.containsKey(it.name)) "*" else ""
+            log("project ${it.name} $log")
         }
-        log("================================================== 参与加速编译的模块如 end")
+        log("================================================== 各个模块是否参与编译加速 end")
     }
 }

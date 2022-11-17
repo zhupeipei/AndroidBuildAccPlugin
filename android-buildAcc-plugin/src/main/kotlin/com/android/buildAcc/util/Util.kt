@@ -2,6 +2,8 @@ package com.android.buildAcc.util
 
 import com.android.build.gradle.AppExtension
 import com.android.buildAcc.constants.CONFIGURATIONS
+import com.android.buildAcc.constants.WHITE_LIST_FILE
+import com.android.buildAcc.constants.WHITE_LIST_FOLDER
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -153,20 +155,24 @@ fun Project.getLastModifiedTimeStamp(): Long {
 
 private fun queryFolderLastModifiedTimeStamp(file: File, pair: MyPair) {
     if (file.isDirectory) {
-        if (file.name.contains("build") || file.startsWith(".")) {
+        if (file.name.contains("build") || file.startsWith(".") || inWhiteListFolder(file.name)) {
             return
         }
         var lastModifiedTime = 0L
         file.listFiles().forEach {
             queryFolderLastModifiedTimeStamp(it, pair)
         }
-    } else {
+    } else if (!inWhiteListFile(file.name)) {
         if (pair.time < file.lastModified()) {
             pair.time = file.lastModified()
             pair.path = file.absolutePath
         }
     }
 }
+
+fun inWhiteListFolder(folderName: String) = WHITE_LIST_FOLDER.contains(folderName)
+
+fun inWhiteListFile(fileName: String) = WHITE_LIST_FILE.contains(fileName)
 
 fun Project.getLastModifiedTimeStampSimple(): Long {
     val path = this.projectDir.absolutePath

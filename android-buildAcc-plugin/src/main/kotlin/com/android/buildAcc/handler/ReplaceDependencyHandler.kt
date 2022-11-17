@@ -22,7 +22,7 @@ class ReplaceDependencyHandler(private val mChangedModulesHandler: ChangedModule
         // 如果lib1依赖lib2，同时别的项目也依赖了lib2，lib2对应的aar存在，lib1对应aar不存在，这时候会导致lib2既有远程依赖又有本地依赖
         mChangedModulesHandler.checkProjectMavenFileExist()
 
-        mChangedModulesHandler.printLog()
+        mChangedModulesHandler.printLog(rootProject)
 
         rootProject.allprojects.forEach { subProject ->
             log("subproject ============================== ${subProject.name}")

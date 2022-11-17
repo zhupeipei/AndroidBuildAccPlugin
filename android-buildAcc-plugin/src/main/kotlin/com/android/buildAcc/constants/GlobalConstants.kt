@@ -17,4 +17,8 @@ val PROJECT_MAVEN_MAP = mutableMapOf<String, BundleInfo>()
 
 val CONFIGURATIONS = arrayOf("implementation", "api", "compileOnly")
 
+val WHITE_LIST_FOLDER = hashSetOf<String>()
+
+val WHITE_LIST_FILE = hashSetOf<String>()
+
 
