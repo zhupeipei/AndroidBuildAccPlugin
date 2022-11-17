@@ -10,6 +10,7 @@ import com.android.buildAcc.model.RepoType
 import com.android.buildAcc.util.MAVEN_TASK_PREFIX_FOR_LOCAL_DEPENDENCY
 import com.android.buildAcc.util.configurationList
 import com.android.buildAcc.util.execCmd
+import com.android.buildAcc.util.getAppProject
 import com.android.buildAcc.util.getDefaultMavenGroupId
 import com.android.buildAcc.util.isAndroidPlugin
 import com.android.buildAcc.util.isAppPlugin
@@ -23,6 +24,7 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultDependencyArtifact
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 /**
@@ -32,20 +34,40 @@ import java.io.File
  */
 class LocalDependencyUploadHandler {
     fun configLocalDependencyMavenPublishPlugin(
+        subProject: Project,
+        dependencyMap: HashMap<String, ArrayList<LocalDependencyModel>>
+    ) {
+        if (subProject == subProject.rootProject) {
+            return
+        } else if (isAppPlugin(subProject) || isJavaPlugin(subProject)) {
+            return
+        } else if (isAndroidPlugin(subProject)) {
+            subProject.afterEvaluate {
+                val list = dependencyMap[subProject.name]
+                configMavenPublish(subProject, list)
+            }
+            return
+        }
+    }
+
+    fun createAndConfigPublishTask(
         project: Project,
         dependencyMap: HashMap<String, ArrayList<LocalDependencyModel>>
     ) {
-        if (project == project.rootProject) {
+        if (dependencyMap.size <= 0) {
             return
-        } else if (isAppPlugin(project) || isJavaPlugin(project)) {
-            return
-        } else if (isAndroidPlugin(project)) {
-            project.afterEvaluate {
-                val list = dependencyMap[project.name]
-                configMavenPublish(project, list)
-                hookPreBuildTask(project, list)
+        }
+        val (_, appProject) = getAppProject(project)
+            ?: throw RuntimeException("无法替换本地aar依赖，因为appProject无法找到")
+        val preBuildTask = appProject.tasks.named("preBuild")
+
+        project.rootProject.allprojects.forEach { subProject ->
+            if (subProject == subProject.rootProject) {
+            } else if (isAppPlugin(subProject) || isJavaPlugin(subProject)) {
+            } else if (isAndroidPlugin(subProject)) {
+                val list = dependencyMap[subProject.name]
+                hookPreBuildTask(subProject, list, preBuildTask)
             }
-            return
         }
     }
 
@@ -117,29 +139,26 @@ class LocalDependencyUploadHandler {
         return if (useNet) {
             val cmdResult =
                 project.execCmd("curl -I $MAVEN_REPO_HTTP_URL${mavenModel.toPath()}")
-            val mavenInfo = if (cmdResult.startsWith("HTTP/1.1 200 OK")) {
+            if (cmdResult.startsWith("HTTP/1.1 200 OK")) {
                 MavenInfo(RepoType.RepoNet, mavenModel, true)
             } else {
                 MavenInfo(RepoType.RepoNet, mavenModel, false)
             }
-            mavenInfo
         } else {
             val modelExist = File(MAVEN_REPO_LOCAL_URL, mavenModel.toPath()).exists()
-            val mavenInfo = MavenInfo(RepoType.RepoLocal, mavenModel, modelExist)
-            mavenInfo
+            MavenInfo(RepoType.RepoLocal, mavenModel, modelExist)
         }
     }
 
     private fun hookPreBuildTask(
         project: Project,
-        localDependencyModelList: ArrayList<LocalDependencyModel>?
+        localDependencyModelList: ArrayList<LocalDependencyModel>?,
+        preBuildTask: TaskProvider<Task>
     ) {
         if (localDependencyModelList == null || localDependencyModelList.size <= 0) {
             return
         }
         runCatching {
-            val preBuildTask = project.tasks.named("preBuild")
-            val taskList = ArrayList<Task>()
             localDependencyModelList.forEach { model ->
                 val publicationName =
                     "$MAVEN_TASK_PREFIX_FOR_LOCAL_DEPENDENCY-${model.dependencyName}-${model.type.capitalize()}"

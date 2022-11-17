@@ -114,7 +114,7 @@ class BuildAccPlugin : Plugin<Project> {
                     mavenPublish.applyMavenPublishPlugin(subProject)
                     // 配置maven上传的一些参数
                     mavenPublish.configSubProjectMavenPublishPlugin(subProject)
-                    // 添加上传本地依赖的一些文件
+                    // 配置maven上传的参数
                     mLocalDependencyUploadHandler.configLocalDependencyMavenPublishPlugin(
                         subProject,
                         mChangedModulesHandler.mLocalDependencyMap
@@ -135,17 +135,22 @@ class BuildAccPlugin : Plugin<Project> {
                     throw RuntimeException("未找到com.android.application模块")
                 }
 
-                val handler = AarBuildHandler()
-                // 在assembleTask后，将子模块打包为aar并上传
-                handler.handleAssembleTask(project)
-
-                mReplaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
-
+                // 添加上传本地依赖的一些文件
+                mLocalDependencyUploadHandler.createAndConfigPublishTask(
+                    project,
+                    mChangedModulesHandler.mLocalDependencyMap
+                )
                 mLocalDependencyUploadHandler.resolveDependency(
                     project.rootProject,
                     appExtension,
                     mChangedModulesHandler.mLocalDependencyMap
                 )
+
+                val handler = AarBuildHandler()
+                // 在assembleTask后，将子模块打包为aar并上传
+                handler.handleAssembleTask(project)
+
+                mReplaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
             }
 
             override fun buildFinished(buildResult: BuildResult) {
