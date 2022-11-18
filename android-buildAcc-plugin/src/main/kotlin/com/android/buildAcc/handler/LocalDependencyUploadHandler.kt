@@ -160,13 +160,15 @@ class LocalDependencyUploadHandler {
         }
         runCatching {
             localDependencyModelList.forEach { model ->
-                val publicationName =
-                    "$MAVEN_TASK_PREFIX_FOR_LOCAL_DEPENDENCY-${model.dependencyName}-${model.type.capitalize()}"
-                runCatching {
-                    val uploadTask =
-                        project.tasks.named("publish${publicationName.capitalize()}PublicationToMavenRepository")
-                    preBuildTask.configure {
-                        it.finalizedBy(uploadTask)
+                if (model.mavenInfo?.modelExist == false) {
+                    val publicationName =
+                        "$MAVEN_TASK_PREFIX_FOR_LOCAL_DEPENDENCY-${model.dependencyName}-${model.type.capitalize()}"
+                    runCatching {
+                        val uploadTask =
+                            project.tasks.named("publish${publicationName.capitalize()}PublicationToMavenRepository")
+                        preBuildTask.configure {
+                            it.finalizedBy(uploadTask)
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.android.buildAcc.handler
 
+import com.android.buildAcc.constants.PROJECT_MAVEN_MAP
 import com.android.buildAcc.util.ASSEMBLE
 import com.android.buildAcc.util.MAVEN_TASK_PREFIX
 import com.android.buildAcc.util.getAppAssembleTask
@@ -28,10 +29,14 @@ class AarBuildHandler {
             assembleTaskProvider?.configure { assembleTask ->
                 assembleTask.finalizedBy(buildAccAfterAssembleTask)
                 project.rootProject.allprojects.forEach { project ->
-                    val buildTypeName = applicationVariant.buildType.name
-                    getBundleAarTask(project, buildTypeName)?.let { bundleAarTask ->
-                        assembleTask.finalizedBy(bundleAarTask)
-                        hookPublishToMavenTask(bundleAarTask, buildTypeName, project)
+                    val mavenFileExist =
+                        PROJECT_MAVEN_MAP[project.name]?.mavenInfo?.modelExist ?: false
+                    if (!mavenFileExist) {
+                        val buildTypeName = applicationVariant.buildType.name
+                        getBundleAarTask(project, buildTypeName)?.let { bundleAarTask ->
+                            assembleTask.finalizedBy(bundleAarTask)
+                            hookPublishToMavenTask(bundleAarTask, buildTypeName, project)
+                        }
                     }
                 }
             }

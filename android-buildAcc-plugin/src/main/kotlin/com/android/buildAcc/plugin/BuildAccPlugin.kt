@@ -42,6 +42,7 @@ class BuildAccPlugin : Plugin<Project> {
     private val mavenPublish = MavenPublishHandler(mChangedModulesHandler)
     private val mReplaceDependencyHandler = ReplaceDependencyHandler(mChangedModulesHandler)
     private val mLocalDependencyUploadHandler = LocalDependencyUploadHandler()
+    private val mAarBuildHandler = AarBuildHandler()
 
     override fun apply(project: Project) {
         if (project.rootProject != project) {
@@ -157,9 +158,8 @@ class BuildAccPlugin : Plugin<Project> {
                     mChangedModulesHandler.mLocalDependencyMap
                 )
 
-                val handler = AarBuildHandler()
                 // 在assembleTask后，将子模块打包为aar并上传
-                handler.handleAssembleTask(project)
+                mAarBuildHandler.handleAssembleTask(project)
 
                 mReplaceDependencyHandler.resolveDependency(project.rootProject, appExtension)
             }
