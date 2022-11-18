@@ -37,6 +37,7 @@ class BuildAccPlugin : Plugin<Project> {
     private var mAppProject: Project? = null
     private var mBuildAccExtension: BuildAccExtension? = null
 
+    // 计算每个project以及task的时间
     private val mBuildTimeCostHandler = BuildTimeCostHandler()
     private val mChangedModulesHandler = ChangedModulesHandler()
     private val mavenPublish = MavenPublishHandler(mChangedModulesHandler)
@@ -114,7 +115,7 @@ class BuildAccPlugin : Plugin<Project> {
 
         // 在这种情况下，需要看下是否每次都会生成aar
 
-        project.gradle.addListener(mBuildTimeCostHandler.taskExecutionListener)
+        mBuildTimeCostHandler.config(project.gradle)
         project.gradle.addProjectEvaluationListener(object : ProjectEvaluationListenerWrapper() {
             override fun afterEvaluate(subProject: Project, projectState: ProjectState) {
                 super.afterEvaluate(subProject, projectState)

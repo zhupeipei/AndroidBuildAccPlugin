@@ -1,9 +1,12 @@
 package com.android.buildAcc.handler
 
 import com.android.buildAcc.model.TaskExecTimeInfo
-import org.gradle.api.Project
+import com.android.buildAcc.util.BuildListenerWrapper
+import com.android.buildAcc.util.log
+import org.gradle.BuildResult
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionListener
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.TaskState
 
 /**
@@ -29,6 +32,7 @@ class BuildTimeCostHandler {
             var list = timeCostMapForProject[projectName]
             if (list == null) {
                 list = ArrayList<TaskExecTimeInfo>()
+                timeCostMapForProject[projectName] = list
             }
             list.add(timeInfo)
         }
@@ -43,13 +47,24 @@ class BuildTimeCostHandler {
         }
     }
 
-    fun calProjectExecTime(project: Project): Long {
-        val projectName = project.name
+    fun calProjectExecTime(projectName: String): Long {
         var costTime = 0L
         timeCostMapForProject[projectName]?.forEach {
             costTime += it.total
         }
         return costTime
+    }
+
+    fun config(gradle: Gradle) {
+        gradle.addListener(taskExecutionListener)
+        gradle.addBuildListener(object : BuildListenerWrapper() {
+            override fun buildFinished(buildResult: BuildResult) {
+                log("===========================build Time Cost==============================")
+                timeCostMapForProject.forEach {
+                    log("project ${it.key} cost ${calProjectExecTime(it.key)}")
+                }
+            }
+        })
     }
 
 }
