@@ -131,13 +131,13 @@ class ChangedModulesHandler {
     // 如果项目不在加速编译的项目中，那么该项目以及父项目都不应该参与加速编译；
     // 如果加速编译的项目对应的aar文件还没有生成，那么该项目、父项目、子项目都不应该参与编译
     fun checkProjectMavenFileExist() {
-        val projectNames = mutableListOf<String>()
+        val projectMavenNotExistNames = mutableListOf<String>()
         mNeedResolvedProjectMap.forEach { (projectName, bundleInfo) ->
             if (bundleInfo.mavenInfo?.modelExist == false) {
-                projectNames.add(projectName)
+                projectMavenNotExistNames.add(projectName)
             }
         }
-        projectNames.forEach { projectName ->
+        projectMavenNotExistNames.forEach { projectName ->
             log("$projectName 项目无法参与加速编译，因为当前项目的mavenRepo不存在")
             mNeedResolvedProjectMap.remove(projectName)
             PROJECT_MAVEN_MAP.remove(projectName)

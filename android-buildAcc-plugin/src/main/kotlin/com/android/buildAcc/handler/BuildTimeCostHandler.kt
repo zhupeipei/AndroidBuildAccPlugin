@@ -21,6 +21,8 @@ class BuildTimeCostHandler {
     // 用来按顺序记录执行的 task 名称
     private val taskPathList = ArrayList<String>()
 
+    private var mBuildStartTime = 0L
+
     val taskExecutionListener = object : TaskExecutionListener {
         override fun beforeExecute(task: Task) {
             // task开始执行之前搜集task的信息
@@ -56,13 +58,26 @@ class BuildTimeCostHandler {
     }
 
     fun config(gradle: Gradle) {
+        mBuildStartTime = System.currentTimeMillis()
+
         gradle.addListener(taskExecutionListener)
         gradle.addBuildListener(object : BuildListenerWrapper() {
             override fun buildFinished(buildResult: BuildResult) {
                 log("===========================build Time Cost==============================")
                 timeCostMapForProject.forEach {
-                    log("project ${it.key} cost ${calProjectExecTime(it.key)}")
+                    val timeCost = calProjectExecTime(it.key)
+                    log("project ${it.key} cost $timeCost")
                 }
+                val totalTime = with(System.currentTimeMillis() - mBuildStartTime) {
+                    if (this > 60_000) {
+                        val minute = this / 60_000
+                        val second = (this - minute * 60_000) / 1000
+                        "${minute}m${second}s"
+                    } else {
+                        "${this / 1000}"
+                    }
+                }
+                log("total build time: $totalTime")
             }
         })
     }
