@@ -158,11 +158,10 @@ private fun queryFolderLastModifiedTimeStamp(file: File, pair: MyPair) {
         if (file.name.contains("build") || file.startsWith(".") || inWhiteListFolder(file.name)) {
             return
         }
-        var lastModifiedTime = 0L
         file.listFiles().forEach {
             queryFolderLastModifiedTimeStamp(it, pair)
         }
-    } else if (!inWhiteListFile(file.name)) {
+    } else if (!inWhiteListFile(file.name) || file.startsWith(".")) {
         if (pair.time < file.lastModified()) {
             pair.time = file.lastModified()
             pair.path = file.absolutePath
