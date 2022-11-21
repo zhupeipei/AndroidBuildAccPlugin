@@ -15,5 +15,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "AndroidBuildAccPluginDemo"
+include ':host'
+include ':frame_work'
 include ':app'
 include ':library1'
+include ':library11'
