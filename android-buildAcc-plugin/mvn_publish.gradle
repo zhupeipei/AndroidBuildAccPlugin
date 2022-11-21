@@ -1,4 +1,9 @@
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+signing {
+    sign configurations.archives
+}
 
 def getPropertyFromLocalProperties(key, Object defaultValue) {
     File file = project.rootProject.file('local.properties');
@@ -26,6 +31,10 @@ publishing {
     }
     repositories {
         maven {
+            credentials {
+                username getPropertyFromLocalProperties("USER", '')
+                password getPropertyFromLocalProperties("PASSWORD", '')
+            }
             url = getPropertyFromLocalProperties("REPO_URL", REPO_URL)
         }
     }
