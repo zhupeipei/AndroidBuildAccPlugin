@@ -145,9 +145,10 @@ class ChangedModulesHandler {
             removeProjectAndParentProjectDependency(projectName) {
                 log(">>> $it 项目无法参与加速编译，因为${it}依赖的项目---${projectName}对应的mavenRepo不存在")
             }
-            removeProjectChildDependency(projectName) {
-                log(">>> $it 项目无法参与加速编译，因为${it}父依赖---${projectName}对应的mavenRepo不存在")
-            }
+            // 不应该移除子项目依赖，而是应该替换子项目依赖
+//            removeProjectChildDependency(projectName) {
+//                log(">>> $it 项目无法参与加速编译，因为${it}父依赖---${projectName}对应的mavenRepo不存在")
+//            }
         }
     }
 
