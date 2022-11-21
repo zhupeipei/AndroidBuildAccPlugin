@@ -1,7 +1,8 @@
 package com.android.buildAcc
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import com.android.host.Host
 import com.android.library1.Library1
 
 class MainActivity : AppCompatActivity() {
@@ -10,5 +11,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Library1.print()
+        Host.test()
     }
 }
