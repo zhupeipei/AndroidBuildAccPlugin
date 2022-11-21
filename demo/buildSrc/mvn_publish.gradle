@@ -1,0 +1,32 @@
+apply plugin: 'maven-publish'
+
+def getPropertyFromLocalProperties(key, Object defaultValue) {
+    File file = project.rootProject.file('local.properties');
+    if (file.exists()) {
+        Properties properties = new Properties()
+        properties.load(file.newDataInputStream())
+        return properties.getOrDefault(key, defaultValue)
+    } else {
+        return defaultValue
+    }
+}
+
+def REPO_URL = new File(project.parent.projectDir, 'gradle_plugins').absolutePath
+println("REPO_URL: " + REPO_URL)
+
+publishing {
+    println "publish ===================================="
+    publications {
+        release(MavenPublication) {
+            version = VERSION
+            artifactId = ARTIFACT_ID
+            groupId = GROUP_ID
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url = getPropertyFromLocalProperties("REPO_URL", REPO_URL)
+        }
+    }
+}
