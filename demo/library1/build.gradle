@@ -38,7 +38,8 @@ dependencies {
     api project(":host")
 
     // gradle-7
-    api files("libs/HiPushSdk-v6.0.3.103-release.aar")
+//    api fileTree (dir: 'libs', include: ['*.aar'])
+//    api files("libs/HiPushSdk-v6.0.3.103-release.aar")
 
     // gradle低版本使用
 //    api(name: 'HiPushSdk-v6.0.3.103-release', ext: 'aar')

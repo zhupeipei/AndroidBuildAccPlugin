@@ -6,29 +6,34 @@ buildscript {
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/central' }
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
     }
     dependencies {
         classpath gradleApi()
         classpath localGroovy()
         classpath "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
         classpath 'com.android.tools.build:gradle:7.2.2'
-        classpath 'com.android.buildAcc.plugin:buildAcc-plugin:1.0.1'
+        classpath 'io.github.zhupeipei:buildAcc-plugin:1.0.1-SNAPSHOT'
     }
 }
 
-
-plugins {
-    id 'com.android.application' version '7.2.1' apply false
-    id 'com.android.library' version '7.2.1' apply false
-    id 'org.jetbrains.kotlin.android' version '1.6.10' apply false
-}
+//allprojects {
+//    repositories {
+//        flatDir {
+//            dirs project(':library1').file('libs')
+//        }
+//    }
+//}
 
 apply plugin: 'com.android.buildAcc'
 BuildAccExtension {
     // buildType因为gradle bug，只能设置一个
-    // buildType 'debug'
-    // maven存储的地址
-    mavenUrl '../gradle_plugins/'
+    buildType 'debug'
+    // maven远程存储的地址
+    mavenUrl = '../gradle_plugins/'
+    // maven本地存储的地址
+    mavenLocalUrl = '../gradle_plugins/'
+//    includeBundles = ['library1', "sadf"]
 }
 
 task clean(type: Delete) {
