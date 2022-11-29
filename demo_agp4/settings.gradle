@@ -1,0 +1,23 @@
+//pluginManagement {
+//    repositories {
+//        gradlePluginPortal()
+//        google()
+//        mavenCentral()
+//        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+//    }
+//}
+//dependencyResolutionManagement {
+//    repositories {
+//        google()
+//        mavenCentral()
+//        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+//    }
+//}
+
+rootProject.name = "AndroidBuildAccPluginDemo"
+include ':aaa'
+include ':app'
+include ':library1'
+include ':module:library2'
+include ':library11'
+include ':host'

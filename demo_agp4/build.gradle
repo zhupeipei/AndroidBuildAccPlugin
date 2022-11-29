@@ -1,0 +1,64 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    repositories {
+        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        maven { url "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath gradleApi()
+        classpath localGroovy()
+        classpath "org.jetbrains.kotlin:kotlin-stdlib:1.3.61"
+        classpath 'com.android.tools.build:gradle:4.1.3'
+//        classpath 'com.android.buildAcc.plugin:buildAcc-plugin:1.0.1'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+
+        // 阿里云防墙
+        maven { url "https://maven.aliyun.com/repository/google" }
+        maven { url "https://maven.aliyun.com/repository/public" }
+        maven { url "https://maven.aliyun.com/repository/jcenter" }
+        maven { url "https://maven.aliyun.com/repository/gradle-plugin" }
+
+        // 兜底仓库
+        google()
+        jcenter()
+        mavenCentral()
+//        maven { url "https://jitpack.io" }
+
+        flatDir {
+            dirs project(':library1').file('libs')
+            dirs project(':module:library2').file('libs')
+        }
+    }
+}
+
+
+//plugins {
+//    id 'com.android.application' version '7.2.1' apply false
+//    id 'com.android.library' version '7.2.1' apply false
+//    id 'org.jetbrains.kotlin.android' version '1.3.61' apply false
+//}
+
+//apply plugin: 'com.android.buildAcc'
+//BuildAccExtension {
+//    // buildType因为gradle bug，只能设置一个
+//     buildType 'debug'
+//    // maven远程存储的地址
+//    mavenUrl = './gradle_plugins/'
+//    // maven本地存储的地址
+//    mavenLocalUrl = './gradle_plugins/'
+////    includeBundles = ['library1', "sadf"]
+//}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+//        classpath gradleApi()
+//        classpath localGroovy()
+        classpath "org.jetbrains.kotlin:kotlin-stdlib:1.3.61"
+//        classpath 'com.android.tools.build:gradle:7.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61"
+        classpath "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.61"
+    }
+}
+
+//plugins {
+//    id 'java'
+//    id 'groovy'
+//    id 'kotlin'
+//}
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'kotlin'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    maven { url 'https://maven.aliyun.com/repository/google' }
+    maven { url 'https://maven.aliyun.com/repository/central' }
+//    google()
+//    mavenCentral()
+    gradlePluginPortal()
+
+}
+
+dependencies {
+    implementation localGroovy()
+    implementation gradleApi()
+    implementation "com.android.tools.build:gradle:4.1.3"
+    implementation "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.61"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
