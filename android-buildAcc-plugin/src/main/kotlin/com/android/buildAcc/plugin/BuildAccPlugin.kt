@@ -2,12 +2,14 @@ package com.android.buildAcc.plugin
 
 import com.android.build.gradle.AppExtension
 import com.android.buildAcc.constants.BUILD_TYPES
+import com.android.buildAcc.constants.MAVEN_PUBLISH_URL
 import com.android.buildAcc.constants.MAVEN_REPO_HTTP_URL
 import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
 import com.android.buildAcc.constants.PROJECT_MAVEN_MAP
 import com.android.buildAcc.constants.WHITE_LIST_FILE
 import com.android.buildAcc.constants.WHITE_LIST_FOLDER
 import com.android.buildAcc.handler.AarBuildHandler
+import com.android.buildAcc.handler.BuildTaskPrinterHandler
 import com.android.buildAcc.handler.BuildTimeCostHandler
 import com.android.buildAcc.handler.ChangedModulesHandler
 import com.android.buildAcc.handler.LocalDependencyUploadHandler
@@ -82,6 +84,8 @@ class BuildAccPlugin : Plugin<Project> {
                     }
                 }
             }
+            MAVEN_PUBLISH_URL =
+                if (MAVEN_REPO_HTTP_URL?.isNotEmpty() == true) "$MAVEN_REPO_HTTP_URL" else MAVEN_REPO_LOCAL_URL
             log("MAVEN_REPO_LOCAL_URL=${MAVEN_REPO_LOCAL_URL}, MAVEN_REPO_HTTP_URL=${MAVEN_REPO_HTTP_URL}")
 
             mBuildAccExtension?.whiteListFolder?.let {
@@ -116,6 +120,7 @@ class BuildAccPlugin : Plugin<Project> {
         // 在这种情况下，需要看下是否每次都会生成aar
 
         mBuildTimeCostHandler.config(project.gradle)
+        BuildTaskPrinterHandler().config(project.gradle)
         project.gradle.addProjectEvaluationListener(object : ProjectEvaluationListenerWrapper() {
             override fun afterEvaluate(subProject: Project, projectState: ProjectState) {
                 super.afterEvaluate(subProject, projectState)
@@ -130,7 +135,8 @@ class BuildAccPlugin : Plugin<Project> {
                     // 配置maven上传的参数
                     mLocalDependencyUploadHandler.configLocalDependencyMavenPublishPlugin(
                         subProject,
-                        mChangedModulesHandler.mLocalDependencyMap
+                        mChangedModulesHandler.mLocalDependencyMap,
+                        mBuildAccExtension
                     )
                 }
             }

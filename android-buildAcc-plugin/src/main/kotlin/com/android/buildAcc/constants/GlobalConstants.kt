@@ -9,6 +9,8 @@ import com.android.buildAcc.model.BundleInfo
 var MAVEN_REPO_LOCAL_URL = ""
 var MAVEN_REPO_HTTP_URL: String? = null
 
+var MAVEN_PUBLISH_URL: String = ""
+
 // buildType获取逻辑比较靠后，因此只能通过默认值的方式写入
 var BUILD_TYPES = setOf("debug", "release")
 

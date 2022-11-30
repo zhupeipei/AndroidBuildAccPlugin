@@ -1,8 +1,10 @@
 package com.android.buildAcc.handler
 
 import com.android.build.gradle.AppExtension
+import com.android.buildAcc.constants.MAVEN_PUBLISH_URL
 import com.android.buildAcc.constants.MAVEN_REPO_HTTP_URL
 import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
+import com.android.buildAcc.model.BuildAccExtension
 import com.android.buildAcc.model.LocalDependencyModel
 import com.android.buildAcc.model.MavenInfo
 import com.android.buildAcc.model.MavenModel
@@ -24,7 +26,6 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultDependencyArtifact
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 /**
@@ -35,7 +36,8 @@ import java.io.File
 class LocalDependencyUploadHandler {
     fun configLocalDependencyMavenPublishPlugin(
         subProject: Project,
-        dependencyMap: HashMap<String, ArrayList<LocalDependencyModel>>
+        dependencyMap: HashMap<String, ArrayList<LocalDependencyModel>>,
+        buildAccExtension: BuildAccExtension?
     ) {
         if (subProject == subProject.rootProject) {
             return
@@ -44,7 +46,7 @@ class LocalDependencyUploadHandler {
         } else if (isAndroidPlugin(subProject)) {
             subProject.afterEvaluate {
                 val list = dependencyMap[subProject.name]
-                configMavenPublish(subProject, list)
+                configMavenPublish(subProject, list, buildAccExtension)
             }
             return
         }
@@ -59,21 +61,47 @@ class LocalDependencyUploadHandler {
         }
         val (_, appProject) = getAppProject(project)
             ?: throw RuntimeException("无法替换本地aar依赖，因为appProject无法找到")
-        val preBuildTask = appProject.tasks.named("preBuild")
+        val taskBeforePreBuild = createTaskBeforePreBuild(project)
+        project.rootProject.allprojects.forEach {
+            runCatching {
+                val preBuildTask = it.tasks.named("preBuild")
+                preBuildTask.configure { preBuild ->
+                    preBuild.dependsOn(taskBeforePreBuild)
+                }
+            }
+        }
 
         project.rootProject.allprojects.forEach { subProject ->
             if (subProject == subProject.rootProject) {
             } else if (isAppPlugin(subProject) || isJavaPlugin(subProject)) {
             } else if (isAndroidPlugin(subProject)) {
                 val list = dependencyMap[subProject.name]
-                hookPreBuildTask(subProject, list, preBuildTask)
+                hookPreBuildTask(subProject, list, taskBeforePreBuild)
             }
         }
     }
 
+    private fun createTaskBeforePreBuild(project: Project): Task {
+        val taskName = "taskBeforePreBuild"
+        val task = project.rootProject.tasks.findByName(taskName)
+        if (task != null) {
+            return task
+        }
+        val taskBeforePreBuild = project.rootProject.task(taskName)
+        taskBeforePreBuild.doLast {
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+            log("=================================================taskBeforePreBuild==============================================================")
+            log("=================================================================================================================================")
+            log("=================================================================================================================================")
+        }
+        return taskBeforePreBuild
+    }
+
     private fun configMavenPublish(
         subProject: Project,
-        localDependencyModelList: ArrayList<LocalDependencyModel>?
+        localDependencyModelList: ArrayList<LocalDependencyModel>?,
+        buildAccExtension: BuildAccExtension?
     ) {
         if (localDependencyModelList == null || localDependencyModelList.size <= 0) {
             return
@@ -90,7 +118,11 @@ class LocalDependencyUploadHandler {
             }
             publishingExt.repositories { repositoryHandler ->
                 repositoryHandler.maven {
-                    it.setUrl(if (useNet) MAVEN_REPO_LOCAL_URL else MAVEN_REPO_LOCAL_URL)
+                    it.setUrl(MAVEN_PUBLISH_URL)
+                    it.credentials { credential ->
+                        credential.username = buildAccExtension?.userName
+                        credential.password = buildAccExtension?.password
+                    }
                 }
             }
         }
@@ -139,7 +171,7 @@ class LocalDependencyUploadHandler {
         return if (useNet) {
             val cmdResult =
                 project.execCmd("curl -I $MAVEN_REPO_HTTP_URL${mavenModel.toPath()}")
-            if (cmdResult.startsWith("HTTP/1.1 200 OK")) {
+            if (cmdResult.contains("HTTP/1.1 200 OK")) {
                 MavenInfo(RepoType.RepoNet, mavenModel, true)
             } else {
                 MavenInfo(RepoType.RepoNet, mavenModel, false)
@@ -153,7 +185,7 @@ class LocalDependencyUploadHandler {
     private fun hookPreBuildTask(
         project: Project,
         localDependencyModelList: ArrayList<LocalDependencyModel>?,
-        preBuildTask: TaskProvider<Task>
+        anchorTask: Task
     ) {
         if (localDependencyModelList == null || localDependencyModelList.size <= 0) {
             return
@@ -166,9 +198,7 @@ class LocalDependencyUploadHandler {
                     runCatching {
                         val uploadTask =
                             project.tasks.named("publish${publicationName.capitalize()}PublicationToMavenRepository")
-                        preBuildTask.configure {
-                            it.finalizedBy(uploadTask)
-                        }
+                        anchorTask.dependsOn(uploadTask)
                     }
                 }
             }
