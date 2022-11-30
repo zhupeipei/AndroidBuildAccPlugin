@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
-        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+        mavenLocal { url "${rootDir}/gradle_plugins" }
         maven { url 'https://maven.aliyun.com/repository/public' }
         maven { url 'https://maven.aliyun.com/repository/google' }
         maven { url 'https://maven.aliyun.com/repository/central' }
@@ -20,7 +20,7 @@ buildscript {
 
 allprojects {
     repositories {
-        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+        mavenLocal { url "${rootDir}/gradle_plugins" }
 
         // 阿里云防墙
         maven { url "https://maven.aliyun.com/repository/google" }
@@ -48,16 +48,46 @@ allprojects {
 //    id 'org.jetbrains.kotlin.android' version '1.3.61' apply false
 //}
 
-//apply plugin: 'com.android.buildAcc'
-//BuildAccExtension {
-//    // buildType因为gradle bug，只能设置一个
-//     buildType 'debug'
-//    // maven远程存储的地址
-//    mavenUrl = './gradle_plugins/'
-//    // maven本地存储的地址
-//    mavenLocalUrl = './gradle_plugins/'
-////    includeBundles = ['library1', "sadf"]
-//}
+def getPropertyFromLocalPropertiesIgnoreCase(key, Object defaultValue) {
+    println("key：${key}")
+    File file = project.rootProject.file('local.properties');
+    if (file.exists()) {
+        Properties properties = new Properties()
+        properties.load(file.newDataInputStream())
+        Enumeration<Object> keys = properties.keys()
+        if (keys == null) {
+            println("返回默认值：${defaultValue}")
+            return defaultValue
+        }
+        while (keys.hasMoreElements()) {
+            String currentKey = keys.nextElement().toString()
+            if (currentKey.equalsIgnoreCase(key)) {
+                String result = properties.getOrDefault(currentKey, defaultValue)
+                if (result == null || result.length() == 0 || result.equalsIgnoreCase("unspecified")) {
+                    println("获取：${key}，返回默认值:${defaultValue}")
+                    return defaultValue
+                }
+                println("获取：${key}，返回值:${result}")
+                return result
+            }
+        }
+        println("获取：${key}，返回默认值:${defaultValue}")
+        return defaultValue
+    }
+}
+
+apply plugin: 'com.android.buildAcc'
+BuildAccExtension {
+    // buildType因为gradle bug，只能设置一个
+     buildType 'debug'
+    // maven远程存储的地址
+    userName = getPropertyFromLocalPropertiesIgnoreCase("USER", "")
+    password = getPropertyFromLocalPropertiesIgnoreCase("PASSWORD", "")
+    mavenUrl = './gradle_plugins/'
+    // maven本地存储的地址
+    mavenLocalUrl = './gradle_plugins/'
+//    includeBundles = ['library1', "sadf"]
+}
 
 task clean(type: Delete) {
     delete rootProject.buildDir

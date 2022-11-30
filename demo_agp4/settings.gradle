@@ -3,14 +3,14 @@
 //        gradlePluginPortal()
 //        google()
 //        mavenCentral()
-//        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+//        mavenLocal { url "${rootDir}/gradle_plugins" }
 //    }
 //}
 //dependencyResolutionManagement {
 //    repositories {
 //        google()
 //        mavenCentral()
-//        mavenLocal { url "${rootDir.parent}/gradle_plugins" }
+//        mavenLocal { url "${rootDir}/gradle_plugins" }
 //    }
 //}
 
