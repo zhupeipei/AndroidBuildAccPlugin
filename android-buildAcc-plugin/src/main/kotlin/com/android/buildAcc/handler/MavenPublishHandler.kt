@@ -2,6 +2,7 @@ package com.android.buildAcc.handler
 
 import com.android.build.gradle.AppExtension
 import com.android.buildAcc.constants.BUILD_TYPES
+import com.android.buildAcc.constants.MAVEN_PUBLISH_URL
 import com.android.buildAcc.constants.MAVEN_REPO_HTTP_URL
 import com.android.buildAcc.constants.MAVEN_REPO_LOCAL_URL
 import com.android.buildAcc.constants.PROJECT_MAVEN_MAP
@@ -140,7 +141,7 @@ class MavenPublishHandler(private val mChangedModulesHandler: ChangedModulesHand
                 }
                 publishingExt.repositories { repositoryHandler ->
                     repositoryHandler.maven {
-                        it.setUrl(mavenInfo.url)
+                        it.setUrl(MAVEN_PUBLISH_URL)
                     }
                 }
             }

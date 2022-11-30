@@ -9,6 +9,8 @@ open class BuildAccExtension(
     var buildType: String = "debug",
     // maven远程存储的地址
     var mavenUrl: String? = null,
+    var userName: String? = null,
+    var password: String? = null,
     // maven本地存储的地址
     var mavenLocalUrl: String = "./gradle_plugins/",
     // 包含的模块
